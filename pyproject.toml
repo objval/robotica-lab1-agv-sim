@@ -1,0 +1,20 @@
+[project]
+name = "robotica-lab1-agv-sim"
+version = "0.1.0"
+description = "AGV warehouse simulation for INFO1167 Robótica Lab #1"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "matplotlib>=3.8",
+  "networkx>=3.2",
+  "numpy>=1.26",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
