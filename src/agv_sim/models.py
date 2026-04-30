@@ -50,3 +50,5 @@ class SimulationConfig:
     battery_charge_per_tick: float = 5.0
     seed: int = 42
     max_ticks: int = 1500
+    # "random_shortest" keeps shortest-route intelligence while adding random movement tie-breaks.
+    routing_mode: str = "random_shortest"

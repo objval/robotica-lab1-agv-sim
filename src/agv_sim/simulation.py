@@ -7,7 +7,14 @@ from typing import Dict, List, Optional, Tuple
 
 import networkx as nx
 
-from .graph_utils import bfs_path, create_grid_graph, dfs_any_path, dijkstra_path
+from .graph_utils import (
+    all_simple_paths_limited,
+    bfs_path,
+    create_grid_graph,
+    dfs_any_path,
+    dijkstra_path,
+    random_shortest_path,
+)
 from .models import Cart, Node, Robot, RobotState, SimulationConfig
 
 
@@ -86,7 +93,14 @@ class AGVSimulation:
         return True
 
     def _shortest_path(self, src: Node, dst: Node) -> List[Node]:
-        return dijkstra_path(self.graph, src, dst)
+        mode = self.config.routing_mode
+        if mode == "dijkstra":
+            return dijkstra_path(self.graph, src, dst)
+        if mode == "bfs":
+            return bfs_path(self.graph, src, dst)
+        if mode == "random_shortest":
+            return random_shortest_path(self.graph, src, dst, self.rng)
+        raise ValueError(f"Unsupported routing_mode={mode}")
 
     def _allocate_idle_robots(self) -> None:
         free_carts = [c for c in self.carts if c.assigned_robot_id is None]
@@ -118,6 +132,7 @@ class AGVSimulation:
             r.battery = min(100.0, r.battery + self.config.battery_charge_per_tick)
             if r.battery >= 100.0:
                 r.state = RobotState.IDLE_AT_BASE
+                self.events.append(f"tick={self.ticks}: robot {r.id} battery 100% and ready")
             return
 
         if r.state == RobotState.IDLE_AT_BASE:
@@ -154,6 +169,7 @@ class AGVSimulation:
         elif r.state == RobotState.RETURN_TO_BASE:
             if r.node == r.base:
                 r.state = RobotState.CHARGING
+                self.events.append(f"tick={self.ticks}: robot {r.id} reached base and started charging")
 
     def step(self) -> None:
         self._allocate_idle_robots()
@@ -168,15 +184,35 @@ class AGVSimulation:
         return self.summary()
 
     def summary(self) -> Dict:
+        route_src = (0, 0)
+        route_dst = (min(3, self.config.width - 1), min(2, self.config.height - 1))
+        bfs_example = bfs_path(self.graph, route_src, route_dst)
+        dijkstra_example = dijkstra_path(self.graph, route_src, route_dst)
+        dfs_example = dfs_any_path(self.graph, route_src, route_dst)
+        all_paths = all_simple_paths_limited(self.graph, route_src, route_dst, cutoff=6, max_paths=12)
+
         return {
             "ticks": self.ticks,
+            "config": asdict(self.config),
             "robots": [asdict(r) for r in self.robots],
             "carts": [asdict(c) for c in self.carts],
             "total_deliveries": sum(r.completed_deliveries for r in self.robots),
             "events_tail": self.events[-20:],
+            "requirements_signals": {
+                "n_robots": len(self.robots),
+                "unique_robot_colors": len({r.color for r in self.robots}),
+                "rotation_step_deg": self.config.rotation_step_deg,
+                "all_battery_within_bounds": all(0.0 <= r.battery <= 100.0 for r in self.robots),
+                "routing_mode": self.config.routing_mode,
+            },
             "graph_examples": {
-                "bfs_example": bfs_path(self.graph, (0, 0), (self.config.width - 1, self.config.height - 1))[:8],
-                "dijkstra_example": dijkstra_path(self.graph, (0, 0), (self.config.width - 1, self.config.height - 1))[:8],
-                "dfs_example": dfs_any_path(self.graph, (0, 0), (self.config.width - 1, self.config.height - 1))[:8],
+                "sample_src": route_src,
+                "sample_dst": route_dst,
+                "bfs_example": bfs_example,
+                "dijkstra_example": dijkstra_example,
+                "dfs_example": dfs_example,
+                "all_paths_sample": all_paths,
+                "all_paths_count_sample": len(all_paths),
+                "at_least_one_path": len(all_paths) > 0,
             },
         }

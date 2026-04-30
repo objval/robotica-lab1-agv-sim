@@ -1,4 +1,7 @@
-from agv_sim.models import SimulationConfig, RobotState
+from __future__ import annotations
+
+from agv_sim.models import RobotState, SimulationConfig
+from agv_sim.requirements_check import evaluate_requirements
 from agv_sim.simulation import AGVSimulation
 
 
@@ -31,3 +34,26 @@ def test_cart_color_changes_when_assigned():
     for c in assigned:
         robot = next(r for r in sim.robots if r.id == c.assigned_robot_id)
         assert c.base_color == robot.color
+
+
+def test_summary_includes_graph_coverage_and_config():
+    sim = AGVSimulation(SimulationConfig(seed=13, max_ticks=200, routing_mode="random_shortest"))
+    summary = sim.run(200)
+
+    assert summary["config"]["routing_mode"] == "random_shortest"
+    assert summary["requirements_signals"]["rotation_step_deg"] == 10.0
+
+    graph_examples = summary["graph_examples"]
+    assert len(graph_examples["dfs_example"]) >= 1
+    assert len(graph_examples["dijkstra_example"]) >= 1
+    assert graph_examples["all_paths_count_sample"] >= 1
+    assert graph_examples["at_least_one_path"] is True
+
+
+def test_requirements_report_passes_all_checks_in_default_config():
+    sim = AGVSimulation(SimulationConfig(seed=21, max_ticks=800, routing_mode="random_shortest"))
+    summary = sim.run(800)
+    report = evaluate_requirements(sim, summary)
+
+    assert report["failed"] == 0
+    assert report["passed"] == len(report["checks"])

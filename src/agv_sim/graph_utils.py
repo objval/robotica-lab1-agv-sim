@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import heapq
-from typing import Dict, Iterable, List, Tuple
+import random
+from typing import Dict, List, Optional, Tuple
 
 import networkx as nx
 
@@ -54,6 +55,43 @@ def dijkstra_path(graph: nx.Graph, src: Node, dst: Node) -> List[Node]:
     return path
 
 
+def random_shortest_path(graph: nx.Graph, src: Node, dst: Node, rng: random.Random) -> List[Node]:
+    """Return a shortest path but randomize tie-breaks among equivalent shortest options."""
+    if src == dst:
+        return [src]
+
+    dist_from_src = nx.single_source_dijkstra_path_length(graph, src, weight="weight")
+    if dst not in dist_from_src:
+        return []
+
+    total_cost = dist_from_src[dst]
+    dist_to_dst = nx.single_source_dijkstra_path_length(graph, dst, weight="weight")
+
+    path = [src]
+    current = src
+    safety = 0
+    while current != dst:
+        safety += 1
+        if safety > graph.number_of_nodes() + 5:
+            return []
+
+        candidates: List[Node] = []
+        for neighbor in graph.neighbors(current):
+            edge_cost = graph[current][neighbor].get("weight", 1.0)
+            from_src = dist_from_src.get(current, float("inf")) + edge_cost
+            to_dst = dist_to_dst.get(neighbor, float("inf"))
+            if abs((from_src + to_dst) - total_cost) < 1e-9:
+                candidates.append(neighbor)
+
+        if not candidates:
+            return []
+
+        current = rng.choice(candidates)
+        path.append(current)
+
+    return path
+
+
 def bfs_path(graph: nx.Graph, src: Node, dst: Node) -> List[Node]:
     from collections import deque
 
@@ -97,3 +135,19 @@ def dfs_any_path(graph: nx.Graph, src: Node, dst: Node) -> List[Node]:
             if v not in path:
                 stack.append((v, path + [v]))
     return []
+
+
+def all_simple_paths_limited(
+    graph: nx.Graph,
+    src: Node,
+    dst: Node,
+    *,
+    cutoff: Optional[int] = None,
+    max_paths: int = 20,
+) -> List[List[Node]]:
+    paths: List[List[Node]] = []
+    for idx, path in enumerate(nx.all_simple_paths(graph, src, dst, cutoff=cutoff)):
+        paths.append(path)
+        if idx + 1 >= max_paths:
+            break
+    return paths
