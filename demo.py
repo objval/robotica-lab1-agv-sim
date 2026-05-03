@@ -178,12 +178,15 @@ def main():
     reporte = paso_artifacts(sim, resumen, salida)
     paso_reporte_defensa(reporte, resumen)
 
+    # En Windows VPython suele abrir pestana en blanco; usar Tkinter por defecto
+    usar_tkinter = args.tkinter or sys.platform.startswith("win")
+
     if args.sin_animacion:
         separador("PASO 5 / 5 - Animacion")
         print("  Saltado (--sin-animacion).")
         print(f"\n  Para lanzar la animacion despues:")
-        print(f"    python scripts/ejecutar_vpython.py --ticks {args.ticks}")
-    elif args.tkinter:
+        print(f"    python demo.py --tkinter")
+    elif usar_tkinter:
         separador("PASO 5 / 5 - Animacion Tkinter")
         print("  Abriendo ventana de animacion...\n")
         from agv_sim.animacion_tkinter import AnimadorTkinter

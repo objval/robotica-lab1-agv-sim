@@ -55,6 +55,7 @@ class AnimadorTkinter:
         self.offset_y = margen
 
         self.obj_robots = {}
+        self.obj_dir = {}
         self.obj_textos = {}
         self.obj_carritos = {}
         self.obj_destinos = {}
@@ -73,6 +74,12 @@ class AnimadorTkinter:
             self.obj_robots[r.id] = self.canvas.create_oval(
                 x - 18, y - 18, x + 18, y + 18,
                 fill=_color(r.color), outline="black", width=2
+            )
+            # Linea de direccion (indicador de rotacion)
+            dx = x + math.cos(math.radians(r.angulo)) * 16
+            dy = y - math.sin(math.radians(r.angulo)) * 16
+            self.obj_dir[r.id] = self.canvas.create_line(
+                x, y, dx, dy, fill="black", width=3
             )
             self.obj_textos[r.id] = self.canvas.create_text(
                 x + 22, y - 18, text=f"R{r.id}", font=("Segoe UI", 10, "bold"),
@@ -125,6 +132,10 @@ class AnimadorTkinter:
             x, y = self._coord(r.nodo[0], r.nodo[1])
             self.canvas.coords(self.obj_robots[r.id], x - 18, y - 18, x + 18, y + 18)
             self.canvas.coords(self.obj_textos[r.id], x + 22, y - 18)
+            # Actualizar linea de direccion
+            dx = x + math.cos(math.radians(r.angulo)) * 16
+            dy = y - math.sin(math.radians(r.angulo)) * 16
+            self.canvas.coords(self.obj_dir[r.id], x, y, dx, dy)
 
         for c in self.sim.carritos:
             x, y = self._coord(c.nodo[0], c.nodo[1])
@@ -147,7 +158,7 @@ class AnimadorTkinter:
         self.actualizar()
         self.ventana.after(int(1000 / velocidad), self._paso, ticks, velocidad, contador + 1)
 
-    def animar(self, ticks=None, velocidad=10):
+    def animar(self, ticks=None, velocidad=20):
         limite = ticks if ticks is not None else self.sim.config.max_ticks
         self._paso(limite, velocidad, 0)
         self.ventana.mainloop()
