@@ -144,8 +144,18 @@ def paso_vpython(ticks, semilla, velocidad):
         modo_ruta="random_shortest",
     )
     sim = SimulacionAGV(config)
-    animador = AnimadorVPython(sim)
-    animador.animar(ticks=ticks, velocidad=velocidad)
+    try:
+        animador = AnimadorVPython(sim)
+        animador.animar(ticks=ticks, velocidad=velocidad)
+        return
+    except Exception as e:
+        print(f"  Visual Python fallo: {e}")
+        print("  Cambiando a animacion Tkinter (fallback)...\n")
+
+    from agv_sim.animacion_tkinter import AnimadorTkinter
+    sim2 = SimulacionAGV(config)
+    animador2 = AnimadorTkinter(sim2)
+    animador2.animar(ticks=ticks, velocidad=velocidad)
 
 
 def main():
@@ -154,7 +164,8 @@ def main():
     parser.add_argument("--semilla", type=int, default=42)
     parser.add_argument("--velocidad", type=int, default=10)
     parser.add_argument("--salida", type=str, default="outputs")
-    parser.add_argument("--sin-vpython", action="store_true", help="Saltar animacion 3D")
+    parser.add_argument("--tkinter", action="store_true", help="Usar animacion Tkinter en vez de VPython")
+    parser.add_argument("--sin-animacion", action="store_true", help="Saltar animacion (solo reportes)")
     args = parser.parse_args()
 
     salida = Path(args.salida)
@@ -167,11 +178,23 @@ def main():
     reporte = paso_artifacts(sim, resumen, salida)
     paso_reporte_defensa(reporte, resumen)
 
-    if args.sin_vpython:
-        separador("PASO 5 / 5 - Visual Python")
-        print("  Saltado (--sin-vpython).")
+    if args.sin_animacion:
+        separador("PASO 5 / 5 - Animacion")
+        print("  Saltado (--sin-animacion).")
         print(f"\n  Para lanzar la animacion despues:")
         print(f"    python scripts/ejecutar_vpython.py --ticks {args.ticks}")
+    elif args.tkinter:
+        separador("PASO 5 / 5 - Animacion Tkinter")
+        print("  Abriendo ventana de animacion...\n")
+        from agv_sim.animacion_tkinter import AnimadorTkinter
+        from agv_sim.modelos import ConfigSimulacion
+        from agv_sim.simulacion import SimulacionAGV
+        config = ConfigSimulacion(
+            semilla=args.semilla, ancho=10, alto=8,
+            max_ticks=args.ticks, modo_ruta="random_shortest"
+        )
+        sim_tk = SimulacionAGV(config)
+        AnimadorTkinter(sim_tk).animar(ticks=args.ticks, velocidad=args.velocidad)
     else:
         paso_vpython(args.ticks, args.semilla, args.velocidad)
 

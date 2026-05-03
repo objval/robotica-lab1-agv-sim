@@ -27,10 +27,13 @@ python demo.py
 
 Opciones:
 ```bash
-python demo.py --sin-vpython       # solo reportes, sin animacion 3D
-python demo.py --ticks 600         # simulacion mas corta
-python demo.py --velocidad 15      # animacion mas rapida
+python demo.py --sin-animacion      # solo reportes, sin animacion
+python demo.py --tkinter            # usar animacion Tkinter (mas estable que VPython)
+python demo.py --ticks 600          # simulacion mas corta
+python demo.py --velocidad 15       # animacion mas rapida
 ```
+
+**Nota:** Visual Python (VPython) a veces abre una pestana del navegador en blanco en Windows. Si pasa eso, `demo.py` cambia automaticamente a la animacion Tkinter. O usa `--tkinter` directamente.
 
 ## Pipeline por etapas (alternativa)
 
