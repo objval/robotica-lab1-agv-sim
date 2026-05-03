@@ -18,9 +18,24 @@ This project simulates 4 AGV robots in a 2D warehouse map using graph-based rout
 - Stage-based orchestrator script for modular execution from one entrypoint.
 - Automated tests and machine-readable requirement report.
 
-## One-script modular pipeline (by stage)
+## One-file complete demo
 
-Use `scripts/pipeline.py` as the single entrypoint.
+Run a single file to run tests, generate artifacts, print a defense report, and launch the Visual Python animation:
+
+```bash
+python demo.py
+```
+
+Options:
+```bash
+python demo.py --no-vpython       # skip the 3-D animation (reports only)
+python demo.py --ticks 600        # shorter simulation
+python demo.py --rate 15          # faster animation
+```
+
+## Stage-based pipeline (alternative)
+
+Use `scripts/pipeline.py` as the modular entrypoint.
 
 ```bash
 cd robotica-lab1-agv-sim
