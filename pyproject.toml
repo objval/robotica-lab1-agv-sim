@@ -1,7 +1,7 @@
 [project]
 name = "robotica-lab1-agv-sim"
 version = "0.1.0"
-description = "AGV warehouse simulation for INFO1167 Robótica Lab #1"
+description = "Simulacion de AGV para INFO1167 Robotica Lab #1"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

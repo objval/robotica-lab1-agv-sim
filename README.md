@@ -1,111 +1,108 @@
 # robotica-lab1-agv-sim
 
-Complete implementation for **INFO1167 Robótica — Lab #1** (UCT).  
-This project simulates 4 AGV robots in a 2D warehouse map using graph-based routing, with explicit requirement checks against the lab rules.
+Implementacion completa del **Lab #1 INFO1167 Robotica** (UCT).
+Simula 4 robots AGV en una bodega 2D usando algoritmos de grafos.
 
-## What this project includes
+## Que incluye
 
-- Full AGV simulation engine with deterministic seeds.
-- 4 robots, random cart assignment, pickup/delivery, return-to-base, charge-to-100%, cycle restart.
-- Cart color coupling with assigned robot color (unique robot colors).
-- 10° rotation stepping before movement.
-- Graph algorithms evidence:
-  - BFS (búsqueda en profundidad/anchura context evidence)
-  - Dijkstra (ruta más corta)
-  - DFS (al menos una ruta)
-  - Enumerated simple paths sample (todas las rutas, bounded sample)
-- **Visual Python** live 3-D animation (`scripts/run_vpython.py`).
-- Stage-based orchestrator script for modular execution from one entrypoint.
-- Automated tests and machine-readable requirement report.
+- Motor de simulacion AGV con semillas deterministas
+- 4 robots, asignacion aleatoria de carritos, recogida/entrega, retorno a base, carga al 100%, reinicio de ciclo
+- Cambio de color del carrito al color del robot asignado
+- Rotacion en pasos de 10 grados
+- Algoritmos de grafos:
+  - BFS (busqueda en anchura)
+  - Dijkstra (ruta mas corta)
+  - DFS (profundidad)
+  - Enumeracion de rutas simples
+- Animacion 3D con **Visual Python**
+- Pipeline por etapas y reporte automatico de requisitos
 
-## One-file complete demo
+## Demo completa en un archivo
 
-Run a single file to run tests, generate artifacts, print a defense report, and launch the Visual Python animation:
+Corre un solo archivo para todo:
 
 ```bash
 python demo.py
 ```
 
-Options:
+Opciones:
 ```bash
-python demo.py --no-vpython       # skip the 3-D animation (reports only)
-python demo.py --ticks 600        # shorter simulation
-python demo.py --rate 15          # faster animation
+python demo.py --sin-vpython       # solo reportes, sin animacion 3D
+python demo.py --ticks 600         # simulacion mas corta
+python demo.py --velocidad 15      # animacion mas rapida
 ```
 
-## Stage-based pipeline (alternative)
-
-Use `scripts/pipeline.py` as the modular entrypoint.
+## Pipeline por etapas (alternativa)
 
 ```bash
 cd robotica-lab1-agv-sim
 python3 -m venv .venv
 source .venv/bin/activate
 
-# Stage 1: setup dependencies
+# Etapa 1: dependencias
 python scripts/pipeline.py setup
 
-# Stage 2: run tests
+# Etapa 2: tests
 python scripts/pipeline.py test
 
-# Stage 3: run simulation
-python scripts/pipeline.py simulate --ticks 1000 --seed 42 --routing-mode random_shortest --output-dir outputs
+# Etapa 3: simulacion
+python scripts/pipeline.py simular --ticks 1000 --semilla 42 --modo-ruta random_shortest --salida outputs
 
-# Stage 4: verify requirements from generated artifacts
-python scripts/pipeline.py verify --output-dir outputs
+# Etapa 4: verificar requisitos
+python scripts/pipeline.py verificar --salida outputs
 
-# Run everything in one command
-python scripts/pipeline.py all --ticks 1000 --seed 42 --routing-mode random_shortest --output-dir outputs
+# Todo de una
+python scripts/pipeline.py todo --ticks 1000 --semilla 42 --modo-ruta random_shortest --salida outputs
 ```
 
-### Visual Python animation
-
-Run the live 3-D animation (satisfies the *Visual Python* lab topic):
+### Animacion Visual Python
 
 ```bash
-python scripts/run_vpython.py --ticks 600 --rate 10
+python scripts/ejecutar_vpython.py --ticks 600 --velocidad 10
 ```
 
-Requires a display / browser (VPython opens a local server).
+Requiere pantalla/navegador (VPython abre un servidor local).
 
-### Routing modes
+### Modos de ruta
 
-- `random_shortest` (default): shortest-path intelligence with randomized tie-breaks among equivalent shortest options.
-- `dijkstra`: deterministic shortest path.
-- `bfs`: breadth-first path (uniform grid, pedagogical mode).
+- `random_shortest` (default): ruta mas corta con desempate aleatorio
+- `dijkstra`: ruta corta determinista
+- `bfs`: busqueda en anchura
 
-## Outputs
+## Salidas
 
-After simulation (`simulate` or `all`):
+Despues de simular:
 
-- `outputs/summary.json` → deliveries, entities, config, graph evidence, requirement signals.
-- `outputs/requirements_report.json` → pass/fail checklist for lab rules (R1..R8).
-- `outputs/snapshot.png` → visual snapshot for presentation/defense.
+- `outputs/resumen.json` -> entregas, entidades, config, evidencia de grafos
+- `outputs/reporte_requisitos.json` -> checklist de requisitos del lab (R1..R8)
+- `outputs/captura.png` -> imagen para la defensa
 
-## Project structure
+## Estructura
 
-- `scripts/pipeline.py` — single stage-based orchestrator (`setup|test|simulate|verify|all`)
-- `scripts/run_simulation.py` — simulation execution + output artifact generation
-- `scripts/run_vpython.py` — Visual Python live animation entrypoint
-- `src/agv_sim/models.py` — entities and config
-- `src/agv_sim/graph_utils.py` — graph creation + BFS/DFS/Dijkstra + random shortest + path enumeration
-- `src/agv_sim/simulation.py` — core AGV state machine
-- `src/agv_sim/requirements_check.py` — explicit 1:1 lab requirement validator
-- `src/agv_sim/visualizer.py` — matplotlib snapshot exporter
-- `src/agv_sim/vpython_vis.py` — Visual Python 3-D animator
-- `tests/` — automated verification
-- `docs/assets/` — original lab PDF + extracted text
-- `docs/research/` — research and defense docs
+- `demo.py` - demo completa en un archivo
+- `scripts/pipeline.py` - pipeline por etapas
+- `scripts/ejecutar_simulacion.py` - simulacion + archivos
+- `scripts/ejecutar_vpython.py` - animacion Visual Python
+- `src/agv_sim/modelos.py` - entidades y configuracion
+- `src/agv_sim/grafos.py` - grafos + BFS/DFS/Dijkstra + rutas
+- `src/agv_sim/simulacion.py` - maquina de estados AGV
+- `src/agv_sim/verificador.py` - verificador de requisitos
+- `src/agv_sim/visualizador.py` - exportador de imagen matplotlib
+- `src/agv_sim/animacion_vpython.py` - animador 3D Visual Python
+- `tests/` - verificacion automatica
+- `docs/assets/` - PDF original del lab + texto extraido
 
-## Teacher defense talking points (aligned to lab)
+## Puntos para la defensa
 
-1. Warehouse modeled as 2D QR-node graph.
-2. Four AGVs start at base nodes and get random cart assignments.
-3. Cart color changes to robot color during assignment; resets after delivery.
-4. Robots rotate in 10° steps before moving along graph routes.
-5. Full cycle implemented: assign -> pickup -> deliver -> return -> charging -> restart.
-6. Graph-topic evidence includes DFS, shortest path, and multiple path enumeration.
+1. Bodega modelada como grafo 2D de nodos QR.
+2. Cuatro AGV inician en las esquinas y reciben asignacion aleatoria.
+3. El carrito cambia al color del robot; vuelve a gris despues de entregar.
+4. Rotacion de 10 grados antes de moverse por la ruta del grafo.
+5. Ciclo completo: asignar -> recoger -> entregar -> volver -> cargar -> reiniciar.
+6. Evidencia de temas de grafos: DFS, Dijkstra, rutas multiples.
+7. Visual Python para la animacion 3D.
+8. Geometria con atan2 y rotacion paso a paso.
 
-## License
+## Licencia
 
 MIT
