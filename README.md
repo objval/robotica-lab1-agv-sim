@@ -14,6 +14,7 @@ This project simulates 4 AGV robots in a 2D warehouse map using graph-based rout
   - Dijkstra (ruta más corta)
   - DFS (al menos una ruta)
   - Enumerated simple paths sample (todas las rutas, bounded sample)
+- **Visual Python** live 3-D animation (`scripts/run_vpython.py`).
 - Stage-based orchestrator script for modular execution from one entrypoint.
 - Automated tests and machine-readable requirement report.
 
@@ -42,6 +43,16 @@ python scripts/pipeline.py verify --output-dir outputs
 python scripts/pipeline.py all --ticks 1000 --seed 42 --routing-mode random_shortest --output-dir outputs
 ```
 
+### Visual Python animation
+
+Run the live 3-D animation (satisfies the *Visual Python* lab topic):
+
+```bash
+python scripts/run_vpython.py --ticks 600 --rate 10
+```
+
+Requires a display / browser (VPython opens a local server).
+
 ### Routing modes
 
 - `random_shortest` (default): shortest-path intelligence with randomized tie-breaks among equivalent shortest options.
@@ -60,11 +71,13 @@ After simulation (`simulate` or `all`):
 
 - `scripts/pipeline.py` — single stage-based orchestrator (`setup|test|simulate|verify|all`)
 - `scripts/run_simulation.py` — simulation execution + output artifact generation
+- `scripts/run_vpython.py` — Visual Python live animation entrypoint
 - `src/agv_sim/models.py` — entities and config
 - `src/agv_sim/graph_utils.py` — graph creation + BFS/DFS/Dijkstra + random shortest + path enumeration
 - `src/agv_sim/simulation.py` — core AGV state machine
 - `src/agv_sim/requirements_check.py` — explicit 1:1 lab requirement validator
 - `src/agv_sim/visualizer.py` — matplotlib snapshot exporter
+- `src/agv_sim/vpython_vis.py` — Visual Python 3-D animator
 - `tests/` — automated verification
 - `docs/assets/` — original lab PDF + extracted text
 - `docs/research/` — research and defense docs
