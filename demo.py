@@ -79,7 +79,7 @@ def main():
     # Simulacion
     sim = paso_simulacion(cfg)
     entregas = sum(r.entregas_completadas for r in sim.robots)
-    resumen = sim.generar_resumen()
+    resumen = sim.resumen()
     print(f"Simulacion: {entregas} entregas en {cfg.max_ticks} ticks")
 
     # Reporte

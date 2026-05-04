@@ -160,7 +160,8 @@ class AnimadorTkinter:
         self.ventana.after(100, self._do_reiniciar)
 
     def _do_reiniciar(self):
-        self.sim.reset()
+        # Crear nueva simulacion desde cero
+        self.sim = SimulacionAGV(self.sim.config)
         self.contador = 0
         self.pausado = False
         self.en_ejecucion = True
@@ -171,7 +172,7 @@ class AnimadorTkinter:
         self.btn_play.config(text="⏸ Pausar", bg=DARK["green"], fg=DARK["bg"])
         self._limpiar_rutas()
         self._reiniciar_canvas()
-        self._log("Simulacion reiniciada.", "green")
+        self._log("Simulacion reiniciada.", "success")
         self._programar_siguiente()
 
     # ------------------------------------------------------------------
