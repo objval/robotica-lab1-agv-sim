@@ -1,15 +1,13 @@
 """
 Generador de sprites amigables para la simulacion AGV.
-Crea imagenes PNG con Pillow usando estilo flat-design limpio.
+Todas las posiciones son proporcionales al tamano para evitar recortes.
 """
 
 import math
 from io import BytesIO
-from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-# Paleta amigable y cálida
 PALETA = {
     "rojo": "#e85d5d",
     "azul": "#4a90d9",
@@ -26,149 +24,207 @@ PALETA = {
     "base": "#8e44ad",
 }
 
-_SHEET = None
-
 
 def _circulo(draw, cx, cy, r, fill, outline=None, width=1):
     draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=fill, outline=outline, width=width)
 
 
 def _rect_redondeado(draw, xy, radius, fill, outline=None, width=1):
-    x1, y1, x2, y2 = xy
     draw.rounded_rectangle(xy, radius=radius, fill=fill, outline=outline, width=width)
 
 
-def _sombra(draw, xy, radius=0):
-    """Dibuja una sombra suave debajo de un objeto."""
-    x1, y1, x2, y2 = xy
-    offset = 3
-    if radius:
-        draw.rounded_rectangle(
-            [x1 + offset, y1 + offset, x2 + offset, y2 + offset],
-            radius=radius, fill=PALETA["sombra"]
-        )
-    else:
-        draw.ellipse([x1 + offset, y1 + offset, x2 + offset, y2 + offset], fill=PALETA["sombra"])
+def _oscurecer(hex_color, factor):
+    h = hex_color.lstrip("#")
+    r = max(0, int(int(h[0:2], 16) * factor))
+    g = max(0, int(int(h[2:4], 16) * factor))
+    b = max(0, int(int(h[4:6], 16) * factor))
+    return f"#{r:02x}{g:02x}{b:02x}"
+
+
+def _aclarar(hex_color, factor):
+    h = hex_color.lstrip("#")
+    r = min(255, int(int(h[0:2], 16) * factor))
+    g = min(255, int(int(h[2:4], 16) * factor))
+    b = min(255, int(int(h[4:6], 16) * factor))
+    return f"#{r:02x}{g:02x}{b:02x}"
 
 
 def generar_robot(tam=64, color="rojo", angulo=0):
     """
-    Sprite de robot amigable con ojos, antena y ruedas.
-    El angulo rota la cara/direccion del robot.
+    Robot con ojos, antena y ruedas.
+    Todo proporcional al tamano, sin recortes.
     """
     img = Image.new("RGBA", (tam, tam), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
-    cx, cy = tam // 2, tam // 2
+
+    cx = tam * 0.5
+    # Centro mas abajo para dar espacio a la antena arriba
+    cy = tam * 0.58
 
     c = PALETA.get(color, PALETA["rojo"])
-    c_oscuro = _oscurecer(c, 0.75)
-    c_claro = _aclarar(c, 1.3)
+    c_oscuro = _oscurecer(c, 0.72)
+    c_claro = _aclarar(c, 1.35)
 
-    # Sombra
-    _sombra(draw, [cx - 22, cy + 14, cx + 22, cy + 24], radius=8)
+    # Proporciones (todo basado en tam)
+    r_rueda = tam * 0.09
+    r_cabeza = tam * 0.16
+    r_ojo = tam * 0.07
+    r_pupila = tam * 0.038
+    r_antena = tam * 0.055
 
-    # Ruedas (pequenos circulos a los lados)
-    _circulo(draw, cx - 18, cy + 16, 6, PALETA["negro"])
-    _circulo(draw, cx + 18, cy + 16, 6, PALETA["negro"])
+    y_ruedas = cy + tam * 0.22
+    y_cuerpo_top = cy - tam * 0.12
+    y_cuerpo_bot = cy + tam * 0.18
+    y_cabeza = cy - tam * 0.18
+    y_antena_base = cy - tam * 0.32
+    y_antena_punta = cy - tam * 0.42
+    y_ojos = cy - tam * 0.20
+    y_boca = cy - tam * 0.16
 
-    # Cuerpo principal (redondeado)
-    _rect_redondeado(draw, [cx - 20, cy - 14, cx + 20, cy + 16], radius=10,
-                     fill=c, outline=c_oscuro, width=2)
+    # Sombra (ovalo plano debajo)
+    sombra_y = cy + tam * 0.20
+    draw.ellipse(
+        [cx - tam * 0.30, sombra_y, cx + tam * 0.30, sombra_y + tam * 0.08],
+        fill=PALETA["sombra"]
+    )
 
-    # Brillo en el cuerpo
-    _rect_redondeado(draw, [cx - 14, cy - 10, cx + 10, cy - 4], radius=4,
-                     fill=c_claro)
+    # Ruedas
+    _circulo(draw, cx - tam * 0.22, y_ruedas, r_rueda, PALETA["negro"])
+    _circulo(draw, cx + tam * 0.22, y_ruedas, r_rueda, PALETA["negro"])
 
-    # Cabeza (circulo)
-    _circulo(draw, cx, cy - 20, 14, c, outline=c_oscuro, width=2)
+    # Cuerpo (rectangulo redondeado)
+    _rect_redondeado(
+        draw,
+        [cx - tam * 0.22, y_cuerpo_top, cx + tam * 0.22, y_cuerpo_bot],
+        radius=int(tam * 0.08),
+        fill=c, outline=c_oscuro, width=max(1, int(tam * 0.03))
+    )
 
-    # Antena
-    draw.line([(cx, cy - 34), (cx, cy - 42)], fill=PALETA["negro"], width=2)
-    _circulo(draw, cx, cy - 44, 4, PALETA["destino"])
+    # Brillo en cuerpo
+    _rect_redondeado(
+        draw,
+        [cx - tam * 0.16, y_cuerpo_top + tam * 0.04, cx + tam * 0.10, y_cuerpo_top + tam * 0.10],
+        radius=int(tam * 0.04),
+        fill=c_claro
+    )
 
-    # Ojos (blancos con pupilas)
-    # Rotar los ojos segun angulo para mostrar direccion
+    # Cabeza
+    _circulo(draw, cx, y_cabeza, r_cabeza, c, outline=c_oscuro, width=max(1, int(tam * 0.03)))
+
+    # Antena (linea + punto)
+    draw.line(
+        [(cx, y_antena_base), (cx, y_antena_punta)],
+        fill=PALETA["negro"], width=max(1, int(tam * 0.025))
+    )
+    _circulo(draw, cx, y_antena_punta, r_antena, PALETA["destino"])
+
+    # Ojos: rotan segun angulo para mostrar direccion
     rad = math.radians(-angulo)
-    ojo_offset = 6
+    ojo_offset = tam * 0.07
     ojo_dx = math.cos(rad) * ojo_offset
     ojo_dy = math.sin(rad) * ojo_offset
 
     # Ojo izquierdo
-    _circulo(draw, cx - 6 + ojo_dx * 0.3, cy - 22 + ojo_dy * 0.3, 5, PALETA["blanco"])
-    _circulo(draw, cx - 6 + ojo_dx, cy - 22 + ojo_dy, 2.5, PALETA["negro"])
+    _circulo(draw, cx - tam * 0.08 + ojo_dx * 0.3, y_ojos + ojo_dy * 0.3, r_ojo, PALETA["blanco"])
+    _circulo(draw, cx - tam * 0.08 + ojo_dx, y_ojos + ojo_dy, r_pupila, PALETA["negro"])
 
     # Ojo derecho
-    _circulo(draw, cx + 6 + ojo_dx * 0.3, cy - 22 + ojo_dy * 0.3, 5, PALETA["blanco"])
-    _circulo(draw, cx + 6 + ojo_dx, cy - 22 + ojo_dy, 2.5, PALETA["negro"])
+    _circulo(draw, cx + tam * 0.08 + ojo_dx * 0.3, y_ojos + ojo_dy * 0.3, r_ojo, PALETA["blanco"])
+    _circulo(draw, cx + tam * 0.08 + ojo_dx, y_ojos + ojo_dy, r_pupila, PALETA["negro"])
 
-    # Boca (pequena sonrisa)
-    draw.arc([cx - 5, cy - 18, cx + 5, cy - 12], start=0, end=180, fill=c_oscuro, width=2)
+    # Boca (sonrisa)
+    draw.arc(
+        [cx - tam * 0.06, y_boca - tam * 0.03, cx + tam * 0.06, y_boca + tam * 0.03],
+        start=0, end=180, fill=c_oscuro, width=max(1, int(tam * 0.025))
+    )
 
     return img
 
 
 def generar_carrito(tam=48, color="gris"):
-    """
-    Sprite de carrito: una caja con ruedas y una etiqueta.
-    """
     img = Image.new("RGBA", (tam, tam), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
-    cx, cy = tam // 2, tam // 2
+
+    cx = tam * 0.5
+    cy = tam * 0.52
 
     c = PALETA.get(color, PALETA["gris"])
-    c_oscuro = _oscurecer(c, 0.7)
+    c_oscuro = _oscurecer(c, 0.70)
 
     # Sombra
-    _sombra(draw, [cx - 14, cy + 10, cx + 14, cy + 18], radius=4)
+    sombra_y = cy + tam * 0.16
+    draw.ellipse(
+        [cx - tam * 0.22, sombra_y, cx + tam * 0.22, sombra_y + tam * 0.06],
+        fill=PALETA["sombra"]
+    )
 
     # Ruedas
-    _circulo(draw, cx - 10, cy + 14, 4, PALETA["negro"])
-    _circulo(draw, cx + 10, cy + 14, 4, PALETA["negro"])
+    r_rueda = tam * 0.07
+    _circulo(draw, cx - tam * 0.16, cy + tam * 0.16, r_rueda, PALETA["negro"])
+    _circulo(draw, cx + tam * 0.16, cy + tam * 0.16, r_rueda, PALETA["negro"])
 
-    # Caja (rectangulo redondeado)
-    _rect_redondeado(draw, [cx - 14, cy - 12, cx + 14, cy + 10], radius=5,
-                     fill=c, outline=c_oscuro, width=2)
+    # Caja
+    _rect_redondeado(
+        draw,
+        [cx - tam * 0.22, cy - tam * 0.14, cx + tam * 0.22, cy + tam * 0.14],
+        radius=int(tam * 0.06),
+        fill=c, outline=c_oscuro, width=max(1, int(tam * 0.03))
+    )
 
-    # Etiqueta/franja en la caja
-    _rect_redondeado(draw, [cx - 10, cy - 6, cx + 10, cy + 2], radius=3,
-                     fill=PALETA["blanco"])
+    # Etiqueta blanca
+    _rect_redondeado(
+        draw,
+        [cx - tam * 0.14, cy - tam * 0.06, cx + tam * 0.14, cy + tam * 0.04],
+        radius=int(tam * 0.03),
+        fill=PALETA["blanco"]
+    )
 
-    # Lineas de la etiqueta (simula texto)
-    draw.line([(cx - 6, cy - 2), (cx + 6, cy - 2)], fill=c_oscuro, width=2)
-    draw.line([(cx - 4, cy + 2), (cx + 4, cy + 2)], fill=c_oscuro, width=2)
+    # Lineas de etiqueta
+    lw = max(1, int(tam * 0.03))
+    draw.line([(cx - tam * 0.08, cy - tam * 0.01), (cx + tam * 0.08, cy - tam * 0.01)], fill=c_oscuro, width=lw)
+    draw.line([(cx - tam * 0.05, cy + tam * 0.03), (cx + tam * 0.05, cy + tam * 0.03)], fill=c_oscuro, width=lw)
 
     return img
 
 
 def generar_base(tam=56, color="base"):
-    """
-    Sprite de base de carga: una plataforma con un rayo.
-    """
     img = Image.new("RGBA", (tam, tam), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
-    cx, cy = tam // 2, tam // 2
+
+    cx = tam * 0.5
+    cy = tam * 0.55
 
     c = PALETA.get(color, PALETA["base"])
-    c_oscuro = _oscurecer(c, 0.7)
+    c_oscuro = _oscurecer(c, 0.70)
 
     # Sombra
-    _sombra(draw, [cx - 20, cy + 12, cx + 20, cy + 20], radius=6)
+    sombra_y = cy + tam * 0.14
+    draw.ellipse(
+        [cx - tam * 0.26, sombra_y, cx + tam * 0.26, sombra_y + tam * 0.06],
+        fill=PALETA["sombra"]
+    )
 
-    # Plataforma exterior (ovalo)
-    draw.ellipse([cx - 22, cy - 8, cx + 22, cy + 16], fill=c, outline=c_oscuro, width=2)
+    # Plataforma exterior
+    draw.ellipse(
+        [cx - tam * 0.28, cy - tam * 0.08, cx + tam * 0.28, cy + tam * 0.18],
+        fill=c, outline=c_oscuro, width=max(1, int(tam * 0.03))
+    )
 
-    # Plataforma interior (mas clara)
-    draw.ellipse([cx - 14, cy - 2, cx + 14, cy + 12], fill=_aclarar(c, 1.4), outline=c_oscuro, width=1)
+    # Plataforma interior
+    draw.ellipse(
+        [cx - tam * 0.18, cy - tam * 0.02, cx + tam * 0.18, cy + tam * 0.12],
+        fill=_aclarar(c, 1.4), outline=c_oscuro, width=max(1, int(tam * 0.02))
+    )
 
-    # Rayo / icono de carga
+    # Rayo
     rayo = [
-        (cx - 2, cy - 2),
-        (cx + 4, cy - 2),
-        (cx, cy + 4),
-        (cx + 6, cy + 4),
-        (cx + 1, cy + 12),
-        (cx - 2, cy + 6),
-        (cx - 6, cy + 6),
+        (cx - tam * 0.02, cy - tam * 0.02),
+        (cx + tam * 0.06, cy - tam * 0.02),
+        (cx + tam * 0.01, cy + tam * 0.06),
+        (cx + tam * 0.09, cy + tam * 0.06),
+        (cx + tam * 0.02, cy + tam * 0.16),
+        (cx - tam * 0.02, cy + tam * 0.08),
+        (cx - tam * 0.09, cy + tam * 0.08),
     ]
     draw.polygon(rayo, fill=PALETA["blanco"], outline=c_oscuro)
 
@@ -176,72 +232,49 @@ def generar_base(tam=56, color="base"):
 
 
 def generar_destino(tam=40):
-    """
-    Sprite de destino: una bandera en un palo.
-    """
     img = Image.new("RGBA", (tam, tam), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
-    cx, cy = tam // 2, tam // 2
+
+    cx = tam * 0.5
+    cy = tam * 0.55
 
     c = PALETA["destino"]
-    c_oscuro = _oscurecer(c, 0.7)
+    c_oscuro = _oscurecer(c, 0.70)
 
-    # Sombra
-    _sombra(draw, [cx - 4, cy + 14, cx + 4, cy + 20])
+    # Sombra base
+    draw.ellipse(
+        [cx - tam * 0.08, cy + tam * 0.18, cx + tam * 0.08, cy + tam * 0.24],
+        fill=PALETA["sombra"]
+    )
 
     # Palo
-    draw.line([(cx, cy - 16), (cx, cy + 16)], fill=PALETA["negro"], width=3)
+    draw.line(
+        [(cx, cy - tam * 0.30), (cx, cy + tam * 0.18)],
+        fill=PALETA["negro"], width=max(1, int(tam * 0.05))
+    )
 
     # Bandera (triangulo)
     bandera = [
-        (cx + 2, cy - 16),
-        (cx + 16, cy - 10),
-        (cx + 2, cy - 4),
+        (cx + tam * 0.02, cy - tam * 0.30),
+        (cx + tam * 0.22, cy - tam * 0.20),
+        (cx + tam * 0.02, cy - tam * 0.10),
     ]
     draw.polygon(bandera, fill=c, outline=c_oscuro)
 
     # Base del palo
-    _circulo(draw, cx, cy + 16, 5, PALETA["negro"])
+    _circulo(draw, cx, cy + tam * 0.18, tam * 0.06, PALETA["negro"])
 
     return img
 
 
 def generar_suelo_tile(tam=64):
-    """
-    Tile de suelo con cuadricula muy sutil.
-    """
     img = Image.new("RGBA", (tam, tam), PALETA["fondo"])
     draw = ImageDraw.Draw(img)
     draw.rectangle([0, 0, tam - 1, tam - 1], outline=PALETA["grid"], width=1)
     return img
 
 
-def _oscurecer(hex_color, factor):
-    """Oscurece un color hex."""
-    hex_color = hex_color.lstrip("#")
-    r = int(hex_color[0:2], 16)
-    g = int(hex_color[2:4], 16)
-    b = int(hex_color[4:6], 16)
-    r = int(r * factor)
-    g = int(g * factor)
-    b = int(b * factor)
-    return f"#{r:02x}{g:02x}{b:02x}"
-
-
-def _aclarar(hex_color, factor):
-    """Aclara un color hex."""
-    hex_color = hex_color.lstrip("#")
-    r = int(hex_color[0:2], 16)
-    g = int(hex_color[2:4], 16)
-    b = int(hex_color[4:6], 16)
-    r = min(255, int(r * factor))
-    g = min(255, int(g * factor))
-    b = min(255, int(b * factor))
-    return f"#{r:02x}{g:02x}{b:02x}"
-
-
 def _img_to_tk(img):
-    """Convierte PIL Image a PhotoImage de Tkinter via buffer."""
     from tkinter import PhotoImage
     buffer = BytesIO()
     img.save(buffer, format="PNG")
@@ -250,53 +283,34 @@ def _img_to_tk(img):
 
 
 def crear_sprite_sheet(robots_colores=None, tam_robot=56, tam_carrito=40, tam_base=48, tam_destino=36):
-    """
-    Genera un diccionario de PhotoImages listos para usar en Tkinter.
-    Se debe mantener una referencia fuerte a estas imagenes para evitar GC.
-    """
     from tkinter import PhotoImage
 
     if robots_colores is None:
         robots_colores = ["rojo", "azul", "verde", "naranja"]
 
-    sheet = {
-        "robot": {},
-        "carrito": {},
-        "base": {},
-        "destino": None,
-        "suelo": None,
-    }
+    sheet = {"robot": {}, "carrito": {}, "base": {}, "destino": None, "suelo": None}
 
-    # Robots por color y angulo (cada 30 grados para suavidad)
     for color in robots_colores:
         sheet["robot"][color] = {}
         for ang in range(0, 360, 30):
             img = generar_robot(tam=tam_robot, color=color, angulo=ang)
             sheet["robot"][color][ang] = _img_to_tk(img)
 
-    # Carritos por color
     for color in list(robots_colores) + ["gris"]:
         img = generar_carrito(tam=tam_carrito, color=color)
         sheet["carrito"][color] = _img_to_tk(img)
 
-    # Bases
     for color in robots_colores:
         img = generar_base(tam=tam_base, color=color)
         sheet["base"][color] = _img_to_tk(img)
 
-    # Destino
     sheet["destino"] = _img_to_tk(generar_destino(tam_destino))
-
-    # Suelo
     sheet["suelo"] = _img_to_tk(generar_suelo_tile(64))
 
     return sheet
 
 
 def obtener_robot_mas_cercano(sheet, color, angulo):
-    """Devuelve el sprite de robot con el angulo mas cercano disponible."""
     angulos = sorted(sheet["robot"][color].keys())
-    # Normalizar angulo a 0-360
     angulo = angulo % 360
-    # Encontrar el mas cercano
     return sheet["robot"][color][min(angulos, key=lambda a: abs(a - angulo))]
