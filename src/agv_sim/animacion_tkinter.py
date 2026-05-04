@@ -458,7 +458,7 @@ class AnimadorTkinter:
         """Dibuja las rutas planificadas de cada robot como lineas punteadas."""
         self._limpiar_rutas()
         for r in self.sim.robots:
-            ruta = r.ruta_actual
+            ruta = r.ruta
             if not ruta or len(ruta) < 2:
                 continue
             color = PALETA.get(r.color, PALETA["azul"])
