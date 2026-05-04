@@ -20,7 +20,7 @@ from agv_sim.verificador import verificar_requisitos
 
 def paso_tests(verbose=False):
     result = subprocess.run(
-        [sys.executable, "-m", "pytest", "tests/", "-v" if verbose else "-q"],
+        [sys.executable, "-m", "pytest", "tests/", "-v"],
         capture_output=True, text=True,
     )
     passed = result.stdout.count("PASSED")
@@ -73,7 +73,6 @@ def main():
         ancho=10,
         alto=8,
         max_ticks=args.ticks,
-        velocidad=args.velocidad,
         modo_ruta=args.modo_ruta,
     )
 
