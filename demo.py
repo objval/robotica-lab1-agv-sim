@@ -18,6 +18,14 @@ import time
 from pathlib import Path
 
 
+# macOS 15: matplotlib backend 'macosx' inicializa NSApplication,
+# lo que rompe Tkinter posteriormente.  Forzamos 'Agg' (no-interactivo)
+# antes de que cualquier modulo importe pyplot.
+if sys.platform == "darwin":
+    import matplotlib
+    matplotlib.use("Agg")
+
+
 VERBOSE = False
 
 
