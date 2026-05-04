@@ -5,10 +5,10 @@ INFO1167 Robotica Lab #1 - Demo completa para la defensa
 Un solo archivo. Todo. Corre esto para mostrarle al profe el proyecto.
 
 Uso:
-    python demo.py                    # demo completa + animacion Tkinter
-    python demo.py --verbose          # muestra todo el reporte en consola
-    python demo.py --sin-animacion    # solo tests + simulacion, sin ventana
-    python demo.py --ticks 800        # simulacion mas corta
+    python demo.py              # demo completa + animacion pygame (default)
+    python demo.py --tkinter    # fuerza animacion Tkinter
+    python demo.py --verbose    # muestra reporte completo en consola
+    python demo.py --no-gui     # solo tests + simulacion, sin ventana
 """
 import argparse
 import json
@@ -34,14 +34,7 @@ def log(msg):
         print(msg)
 
 
-def separador(titulo):
-    log(f"\n{'=' * 60}")
-    log(f"  {titulo}")
-    log(f"{'=' * 60}")
-
-
 def paso_tests():
-    separador("PASO 1 / 5 - Tests automaticos")
     result = subprocess.run(
         [sys.executable, "-m", "pytest", "tests/", "-v", "--tb=short"],
         capture_output=True,
@@ -52,13 +45,13 @@ def paso_tests():
         log(result.stderr)
         print("X Tests fallaron")
         return False
-    print("Tests: 11/11 PASSED")
+    # Solo mostrar resumen
+    passed = result.stdout.count(" PASSED")
+    print(f"Tests: {passed}/11 PASSED")
     return True
 
 
 def paso_simulacion(ticks, semilla, salida):
-    separador("PASO 2 / 5 - Simulacion AGV")
-
     from agv_sim.modelos import ConfigSimulacion
     from agv_sim.simulacion import SimulacionAGV
 
@@ -84,8 +77,6 @@ def paso_simulacion(ticks, semilla, salida):
 
 
 def paso_artifacts(sim, resumen, salida):
-    separador("PASO 3 / 5 - Generando archivos")
-
     from agv_sim.verificador import verificar_requisitos
     from agv_sim.visualizador import guardar_captura
 
@@ -108,8 +99,6 @@ def paso_artifacts(sim, resumen, salida):
 
 
 def paso_reporte_defensa(reporte, resumen):
-    separador("PASO 4 / 5 - Reporte para la defensa")
-
     log(f"\n  {'ID':<6} {'Estado':<8} {'Requisito'}")
     log(f"  {'-' * 54}")
     for c in reporte["checks"]:
@@ -120,8 +109,8 @@ def paso_reporte_defensa(reporte, resumen):
     log(f"\n  {'-' * 54}")
     log(f"  Aprobado: {reporte['porcentaje']}%  ({reporte['aprobados']}/{len(reporte['checks'])} checks)")
 
-    log(f"\n  Evidencia de algoritmos de grafos:")
     grafos = resumen.get("ejemplos_grafos", {})
+    log(f"\n  Evidencia de algoritmos de grafos:")
     log(f"    - BFS  (anchura)      : {len(grafos.get('bfs', []))} nodos")
     log(f"    - Dijkstra (corta)    : {len(grafos.get('dijkstra', []))} nodos")
     log(f"    - DFS  (profundidad)  : {len(grafos.get('dfs', []))} nodos")
@@ -137,25 +126,17 @@ def paso_reporte_defensa(reporte, resumen):
     log(f"    - Retornos a base     : {cargas}")
     log(f"    - Baterias al 100%    : {listos}")
 
-    log(f"\n  Temas cubiertos:")
-    log(f"    - Python               : OK")
-    log(f"    - Visual Python        : OK (se lanza ahora...)")
-    log(f"    - Geometria            : OK (atan2, rotacion 10 grados)")
-    log(f"    - Grafos - BFS/DFS     : OK")
-    log(f"    - Grafos - Dijkstra    : OK")
-    log(f"    - Grafos - todas rutas : OK")
-
     print(f"Requisitos: {reporte['aprobados']}/{len(reporte['checks'])} OK ({reporte['porcentaje']}%)")
 
 
 def main():
     parser = argparse.ArgumentParser(description="INFO1167 Lab #1 - Demo completa")
-    parser.add_argument("--ticks", type=int, default=800)
-    parser.add_argument("--semilla", type=int, default=42)
-    parser.add_argument("--velocidad", type=int, default=10)
+    parser.add_argument("--ticks", type=int, default=600, help="Ticks de simulacion (default: 600)")
+    parser.add_argument("--semilla", type=int, default=123, help="Semilla aleatoria (default: 123)")
+    parser.add_argument("--velocidad", type=int, default=15, help="Ticks por segundo (default: 15)")
     parser.add_argument("--salida", type=str, default="outputs")
-    parser.add_argument("--tkinter", action="store_true", help="Usar animacion Tkinter")
-    parser.add_argument("--sin-animacion", action="store_true", help="Saltar animacion")
+    parser.add_argument("--tkinter", action="store_true", help="Usar Tkinter en vez de Pygame")
+    parser.add_argument("--no-gui", action="store_true", help="Saltar animacion (solo reportes)")
     parser.add_argument("--verbose", action="store_true", help="Mostrar reporte completo en consola")
     args = parser.parse_args()
 
@@ -171,22 +152,36 @@ def main():
     reporte = paso_artifacts(sim, resumen, salida)
     paso_reporte_defensa(reporte, resumen)
 
-    if args.sin_animacion:
-        print("Animacion: omitida (--sin-animacion)")
+    if args.no_gui:
+        print("Animacion: omitida (--no-gui)")
         print(f"Archivos: {salida.resolve()}")
         return
 
-    print("Abriendo animacion Tkinter...")
-    from agv_sim.animacion_tkinter import AnimadorTkinter
+    print("Abriendo animacion...")
+
     from agv_sim.modelos import ConfigSimulacion
     from agv_sim.simulacion import SimulacionAGV
     config = ConfigSimulacion(
         semilla=args.semilla, ancho=10, alto=8,
         max_ticks=args.ticks, modo_ruta="random_shortest"
     )
-    sim_tk = SimulacionAGV(config)
-    animador = AnimadorTkinter(sim_tk, reporte=reporte, resumen=resumen)
-    animador.animar(ticks=args.ticks, velocidad=args.velocidad)
+    sim_vis = SimulacionAGV(config)
+
+    if args.tkinter:
+        from agv_sim.animacion_tkinter import AnimadorTkinter
+        animador = AnimadorTkinter(sim_vis, reporte=reporte, resumen=resumen)
+        animador.animar(ticks=args.ticks, velocidad=args.velocidad)
+    else:
+        try:
+            from agv_sim.animacion_pygame import AnimadorPygame
+            animador = AnimadorPygame(sim_vis, reporte=reporte, resumen=resumen)
+            animador.animar(ticks=args.ticks, velocidad=args.velocidad)
+        except Exception as e:
+            print(f"Pygame fallo: {e}")
+            print("Cayendo a Tkinter...")
+            from agv_sim.animacion_tkinter import AnimadorTkinter
+            animador = AnimadorTkinter(sim_vis, reporte=reporte, resumen=resumen)
+            animador.animar(ticks=args.ticks, velocidad=args.velocidad)
 
     print(f"Archivos: {salida.resolve()}")
 
