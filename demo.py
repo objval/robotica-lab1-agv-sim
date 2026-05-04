@@ -15,7 +15,7 @@ from pathlib import Path
 from agv_sim.animacion_tkinter import AnimadorTkinter
 from agv_sim.modelos import ConfigSimulacion
 from agv_sim.simulacion import SimulacionAGV
-from agv_sim.verificador import generar_reporte_requisitos
+from agv_sim.verificador import verificar_requisitos
 
 
 def paso_tests(verbose=False):
@@ -43,7 +43,7 @@ def paso_archivos(sim, resumen):
     Path("outputs").mkdir(exist_ok=True)
     with open("outputs/resumen.json", "w", encoding="utf-8") as f:
         json.dump(resumen, f, indent=2, ensure_ascii=False)
-    reporte = generar_reporte_requisitos(sim, resumen)
+    reporte = verificar_requisitos(sim, resumen)
     with open("outputs/reporte_requisitos.json", "w", encoding="utf-8") as f:
         json.dump(reporte, f, indent=2, ensure_ascii=False)
     return reporte
