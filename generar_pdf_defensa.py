@@ -96,7 +96,7 @@ archivos = [
     ("src/agv_sim/modelos.py", "Dataclasses: Robot, Carrito, ConfigSimulacion. Modelado del mundo."),
     ("src/agv_sim/grafos.py", "ALGORITMOS ESTRELLA. BFS, DFS, Dijkstra, random_shortest."),
     ("src/agv_sim/simulacion.py", "Maquina de estados FSM. Ciclo completo del robot."),
-    ("src/agv_sim/animacion_pygame.py", "Visualizacion profesional. Rutas, controles, metricas."),
+    ("src/agv_sim/animacion_tkinter.py", "Visualizacion profesional. Rutas, controles, metricas. Dark theme."),
     ("src/agv_sim/sprites.py", "Sprites propios con Pillow. No imagenes descargadas."),
     ("tests/test_grafos.py", "Tests de algoritmos. BFS, Dijkstra, random_shortest."),
     ("tests/test_simulacion.py", "Tests de simulacion. Entregas, estados, baterias, colores."),
@@ -135,11 +135,11 @@ pdf.bullet("Tcl/Tk 8.6.17 via Homebrew -> pyenv Python no es Framework build, Tk
 pdf.bullet("Homebrew Python + python-tk@3.12 -> bottle precompilado enlaza contra Tcl/Tk 9.")
 
 pdf.chapter_title("2.3 La Solucion", level=2)
-pdf.bullet("PYGAME como motor principal. Usa SDL2, que habla directamente con Cocoa sin Tcl/Tk.")
-pdf.bullet("TKINTER como fallback para Windows (donde VPython abre pestanas en blanco por bug WebGL).")
-pdf.bullet("En demo.py, pygame es default. --tkinter activa el fallback.")
+pdf.bullet("TKINTER como motor principal. Funciona perfectamente en macOS 15 con Tcl/Tk 8.6 via Homebrew.")
+pdf.bullet("En Windows, VPython abre pestanas en blanco por bug WebGL, asi que Tkinter es la solucion multiplataforma.")
+pdf.bullet("En demo.py, Tkinter es el default.")
 
-pdf.highlight_box("Para la defensa: Intentamos VPython como pide el laboratorio, pero tiene un bug de compatibilidad con macOS 15.7.3 documentado en la comunidad. Como alternativa profesional, implementamos visualizacion con Pygame (SDL2) que cumple la misma funcion y anadimos Tkinter como fallback multiplataforma.")
+pdf.highlight_box("Para la defensa: Intentamos VPython como pide el laboratorio, pero tiene un bug de compatibilidad con macOS 15.7.3 documentado en la comunidad. Como alternativa profesional, implementamos visualizacion con Tkinter que cumple la misma funcion y funciona perfectamente en macOS 15 tras instalar Tcl/Tk 8.6 via Homebrew.")
 
 # ============================================================
 # CAP 3: FAQ - PREGUNTAS DEL PROFESOR
@@ -276,8 +276,8 @@ pdf.chapter_title("5. Comandos Rapidos para la Defensa")
 
 comandos = [
     ("Ver todos los tests", "pytest tests/ -v"),
-    ("Demo completa (pygame)", "python demo.py"),
-    ("Demo con Tkinter", "python demo.py --tkinter"),
+    ("Demo completa (Tkinter)", "python demo.py"),
+    ("Demo con Tkinter (explicito)", "python demo.py --tkinter"),
     ("Demo rapida", "python demo.py --ticks 300"),
     ("Demo lenta para explicar", "python demo.py --velocidad 5"),
     ("Solo reportes sin GUI", "python demo.py --no-gui"),

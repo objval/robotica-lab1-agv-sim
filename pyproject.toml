@@ -9,7 +9,6 @@ dependencies = [
   "networkx>=3.2",
   "numpy>=1.26",
   "pillow>=10.0",
-  "pygame>=2.5",
   "vpython>=7.6",
   "setuptools<70",
 ]
