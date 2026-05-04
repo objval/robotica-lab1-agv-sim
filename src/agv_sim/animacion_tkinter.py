@@ -83,8 +83,10 @@ def _tipo_evento(evento: str) -> str:
 
 
 class AnimadorTkinter:
-    def __init__(self, sim):
+    def __init__(self, sim, reporte=None, resumen=None):
         self.sim = sim
+        self.reporte = reporte or {}
+        self.resumen = resumen or {}
         self.ventana = tk.Tk()
         self.ventana.title("INFO1167 Robotica | Lab #1 - Simulacion AGV")
         self.ventana.configure(bg=PALETA["fondo"])
@@ -258,6 +260,48 @@ class AnimadorTkinter:
                                      bg=PALETA["fondo"], fg=PALETA["negro"],
                                      justify="left", wraplength=self.ancho_panel - 40)
         self.lbl_estados.pack(padx=8, pady=6, anchor="w")
+
+        # --- Reporte Requisitos ---
+        if self.reporte.get("checks"):
+            req_frame = tk.LabelFrame(self.frame_der, text=" Verificacion Requisitos ",
+                                      font=("Segoe UI", 10, "bold"),
+                                      bg=PALETA["fondo"], fg=PALETA["negro"],
+                                      highlightbackground=PALETA["grid"], highlightthickness=1)
+            req_frame.pack(fill="x", pady=(0, pad))
+            for c in self.reporte["checks"]:
+                ok = c.get("ok", False)
+                color = PALETA["verde"] if ok else PALETA["rojo"]
+                icono = "✓" if ok else "✗"
+                lbl = tk.Label(req_frame, text=f"{icono} {c['id']}: {c['requisito'][:35]}...",
+                               font=("Segoe UI", 8), bg=PALETA["fondo"], fg=color)
+                lbl.pack(anchor="w", padx=8, pady=1)
+            pct = self.reporte.get("porcentaje", 0)
+            tk.Label(req_frame, text=f"Aprobado: {pct}%",
+                     font=("Segoe UI", 10, "bold"), bg=PALETA["fondo"],
+                     fg=PALETA["verde"] if pct == 100 else PALETA["naranja"]).pack(anchor="w", padx=8, pady=(2, 6))
+
+        # --- Evidencia Grafos ---
+        if self.resumen.get("ejemplos_grafos"):
+            grafos = self.resumen["ejemplos_grafos"]
+            graf_frame = tk.LabelFrame(self.frame_der, text=" Algoritmos de Grafos ",
+                                       font=("Segoe UI", 10, "bold"),
+                                       bg=PALETA["fondo"], fg=PALETA["negro"],
+                                       highlightbackground=PALETA["grid"], highlightthickness=1)
+            graf_frame.pack(fill="x", pady=(0, pad))
+            datos = [
+                ("BFS (anchura)", f"{len(grafos.get('bfs', []))} nodos"),
+                ("Dijkstra (corta)", f"{len(grafos.get('dijkstra', []))} nodos"),
+                ("DFS (profundidad)", f"{len(grafos.get('dfs', []))} nodos"),
+                ("Rutas posibles", str(grafos.get("cantidad_rutas", 0))),
+                ("Al menos una ruta", "Si" if grafos.get("al_menos_una_ruta") else "No"),
+            ]
+            for titulo, val in datos:
+                row = tk.Frame(graf_frame, bg=PALETA["fondo"])
+                row.pack(fill="x", padx=8, pady=1)
+                tk.Label(row, text=f"• {titulo}:", font=("Segoe UI", 8),
+                        bg=PALETA["fondo"], fg=PALETA["negro"]).pack(side="left")
+                tk.Label(row, text=val, font=("Segoe UI", 8, "bold"),
+                        bg=PALETA["fondo"], fg=PALETA["azul"]).pack(side="right")
 
         # --- Log ---
         log_frame = tk.LabelFrame(self.frame_der, text=" Registro de Eventos ",
